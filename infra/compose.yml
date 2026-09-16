@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  bff-svc:
+    build:
+      context: ../ms-vidasalud-bff
+      dockerfile: Dockerfile
+    container_name: bff-svc
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m"
+      AZURE_TENANT_ID: "${AZURE_TENANT_ID}"
+      AZURE_API_CLIENT_ID: "${AZURE_API_CLIENT_ID}"
+      APPOINTMENTS_URL: "http://appointments-svc:8081"
+    depends_on:
+      - appointments-svc
+    networks:
+      - vidasalud-net
+
+  appointments-svc:
+    build:
+      context: ../ms-vidasalud-appointments
+      dockerfile: Dockerfile
+    container_name: appointments-svc
+    ports:
+      - "8081:8081"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m"
+      SPRING_DATASOURCE_URL: "${DB_URL:-jdbc:h2:mem:vidasalud_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}"
+      SPRING_DATASOURCE_USERNAME: "${DB_USER:-sa}"
+      SPRING_DATASOURCE_PASSWORD: "${DB_PASS:-}"
+    networks:
+      - vidasalud-net
+
+networks:
+  vidasalud-net:
+    driver: bridge

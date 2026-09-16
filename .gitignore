@@ -1,0 +1,23 @@
+# Global & IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+*.log
+
+# Maven & Java
+**/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node & Angular
+**/node_modules/
+**/dist/
+**/.angular/
+**/.npm/
+
+# Environment secrets
+**/.env
+**/.env.local
