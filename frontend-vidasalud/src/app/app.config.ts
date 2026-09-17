@@ -20,31 +20,35 @@ import {
   MSAL_INTERCEPTOR_CONFIG
 } from '@azure/msal-angular';
 import { environment } from '../environments/environment';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
+
+const clientId = environment.msal.clientId && !environment.msal.clientId.includes('<')
+  ? environment.msal.clientId
+  : '11111111-1111-1111-1111-111111111111';
+
+const tenantId = environment.msal.tenantId && !environment.msal.tenantId.includes('<')
+  ? environment.msal.tenantId
+  : 'common';
+
+export const msalInstance: IPublicClientApplication = new PublicClientApplication({
+  auth: {
+    clientId: clientId,
+    authority: `https://login.microsoftonline.com/${tenantId}`,
+    redirectUri: environment.msal.redirectUri
+  },
+  cache: {
+    cacheLocation: BrowserCacheLocation.LocalStorage
+  }
+});
 
 export function MSALInstanceFactory(): IPublicClientApplication {
-  const clientId = environment.msal.clientId && !environment.msal.clientId.includes('<')
-    ? environment.msal.clientId
-    : '11111111-1111-1111-1111-111111111111';
-
-  const tenantId = environment.msal.tenantId && !environment.msal.tenantId.includes('<')
-    ? environment.msal.tenantId
-    : 'common';
-
-  return new PublicClientApplication({
-    auth: {
-      clientId: clientId,
-      authority: `https://login.microsoftonline.com/${tenantId}`,
-      redirectUri: environment.msal.redirectUri
-    },
-    cache: {
-      cacheLocation: BrowserCacheLocation.LocalStorage
-    }
-  });
+  return msalInstance;
 }
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
   protectedResourceMap.set(environment.msal.apiUri, [environment.msal.scope]);
+  protectedResourceMap.set(`${environment.msal.apiUri}/api`, [environment.msal.scope]);
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap
@@ -67,6 +71,11 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi()),
     {
       provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
       useClass: MsalInterceptor,
       multi: true
     },
@@ -78,3 +87,4 @@ export const appConfig: ApplicationConfig = {
     MsalBroadcastService
   ]
 };
+

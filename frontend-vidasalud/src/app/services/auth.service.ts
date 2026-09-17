@@ -81,6 +81,9 @@ export class AuthService {
 
     const account = this.msal.instance.getActiveAccount() || this.msal.instance.getAllAccounts()[0];
     if (account) {
+      if (!this.msal.instance.getActiveAccount()) {
+        this.msal.instance.setActiveAccount(account);
+      }
       const claims = (account.idTokenClaims || {}) as Record<string, any>;
       const roles: string[] = (claims['roles'] && claims['roles'].length > 0)
         ? claims['roles']

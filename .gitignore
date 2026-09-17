@@ -18,6 +18,8 @@ Thumbs.db
 **/.angular/
 **/.npm/
 
-# Environment secrets
+# Environment secrets & keys
 **/.env
 **/.env.local
+*.pem
+*.key

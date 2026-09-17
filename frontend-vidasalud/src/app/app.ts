@@ -27,11 +27,19 @@ export class App implements OnInit {
           this.authService.refreshUserState();
           this.router.navigate(['/appointments']);
         } else {
+          const accounts = this.msalService.instance.getAllAccounts();
+          if (accounts.length > 0 && !this.msalService.instance.getActiveAccount()) {
+            this.msalService.instance.setActiveAccount(accounts[0]);
+          }
           this.authService.refreshUserState();
         }
       },
       error: (err) => {
         console.error('Error procesando respuesta de Microsoft Entra ID:', err);
+        const accounts = this.msalService.instance.getAllAccounts();
+        if (accounts.length > 0 && !this.msalService.instance.getActiveAccount()) {
+          this.msalService.instance.setActiveAccount(accounts[0]);
+        }
         this.authService.refreshUserState();
       }
     });

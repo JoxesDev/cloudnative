@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus } from '@azure/msal-browser';
 import { AuthService } from '../services/auth.service';
-import { map, catchError, filter, take } from 'rxjs/operators';
+import { map, catchError, filter, take, timeout } from 'rxjs/operators';
 import { of } from 'rxjs';
 
 export const roleGuard = (expectedRoles: string[]): CanActivateFn => {
@@ -52,16 +52,19 @@ export const roleGuard = (expectedRoles: string[]): CanActivateFn => {
       return true;
     };
 
-    // 2. Verificar cuenta en memoria
+    // 2. Verificar cuenta en memoria o cache
     const account = authService.instance.getActiveAccount() || authService.instance.getAllAccounts()[0];
     if (account) {
+      authService.instance.setActiveAccount(account);
+      appAuth.refreshUserState();
       return validateAccount(account);
     }
 
-    // 3. Esperar que MSAL complete cualquier interacción o redirect en progreso (manejado en app.ts)
+    // 3. Esperar que MSAL complete cualquier interacción o redirect en progreso (con timeout de 1.5s para no bloquear la navegación)
     return msalBroadcast.inProgress$.pipe(
       filter((status: InteractionStatus) => status === InteractionStatus.None),
       take(1),
+      timeout(1500),
       map(() => {
         const acc = authService.instance.getActiveAccount() || authService.instance.getAllAccounts()[0];
         if (acc) {
@@ -73,7 +76,13 @@ export const roleGuard = (expectedRoles: string[]): CanActivateFn => {
         return false;
       }),
       catchError(err => {
-        console.warn('Error en validación de sesión MSAL en roleGuard:', err);
+        console.warn('roleGuard timeout esperando MSAL inProgress, verificando cuentas:', err);
+        const acc = authService.instance.getActiveAccount() || authService.instance.getAllAccounts()[0];
+        if (acc) {
+          authService.instance.setActiveAccount(acc);
+          appAuth.refreshUserState();
+          return of(validateAccount(acc));
+        }
         router.navigate(['/login']);
         return of(false);
       })
