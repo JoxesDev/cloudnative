@@ -160,8 +160,6 @@ cloudnative/
 ├── ms-vidasalud-appointments/    # Microservicio de Dominio (Spring Boot 3, JPA, Máquina de Estados)
 ├── infra/                        # Configuración Docker Compose y variables .env.example
 ├── docs/screenshots/             # 6 Capturas de pantalla reales en alta resolución
-├── GUIA_DESPLIEGUE_AWS.md        # Manual paso a paso para EC2, Swap y API Gateway
-├── INFORME_CUMPLIMIENTO_EP1.md   # Informe formal completo para evaluación Duoc UC
 ├── DOCUMENTACION_SISTEMA.md      # Este documento (resumen ejecutivo de arquitectura y código)
 └── README.md                     # Guía de inicio rápido del repositorio
 ```

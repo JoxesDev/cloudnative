@@ -43,9 +43,7 @@ cloudnative/
 │   └── .env.example              # Plantilla de variables de entorno (Azure AD, DB Cloud)
 │
 ├── compose.yml                   # Compose de acceso rápido en la raíz
-├── INFORME_CUMPLIMIENTO_EP1.md   # Informe formal con capturas de pantalla para evaluación Duoc UC
 ├── DOCUMENTACION_SISTEMA.md      # Documentación técnica resumida del sistema y componentes
-├── GUIA_DESPLIEGUE_AWS.md        # Guía paso a paso de despliegue en AWS (EC2 + API Gateway)
 └── README.md                     # Guía de inicio rápido del repositorio
 ```
 
