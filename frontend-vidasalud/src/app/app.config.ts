@@ -5,19 +5,15 @@ import { routes } from './app.routes';
 import {
   IPublicClientApplication,
   PublicClientApplication,
-  InteractionType,
   BrowserCacheLocation
 } from '@azure/msal-browser';
 import {
-  MsalInterceptor,
-  MsalInterceptorConfiguration,
   MsalGuard,
   MsalGuardConfiguration,
   MsalBroadcastService,
   MsalService,
   MSAL_INSTANCE,
-  MSAL_GUARD_CONFIG,
-  MSAL_INTERCEPTOR_CONFIG
+  MSAL_GUARD_CONFIG
 } from '@azure/msal-angular';
 import { environment } from '../environments/environment';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -45,19 +41,9 @@ export function MSALInstanceFactory(): IPublicClientApplication {
   return msalInstance;
 }
 
-export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
-  const protectedResourceMap = new Map<string, Array<string>>();
-  protectedResourceMap.set(environment.msal.apiUri, [environment.msal.scope]);
-  protectedResourceMap.set(`${environment.msal.apiUri}/api`, [environment.msal.scope]);
-  return {
-    interactionType: InteractionType.Redirect,
-    protectedResourceMap
-  };
-}
-
 export function MSALGuardConfigFactory(): MsalGuardConfiguration {
   return {
-    interactionType: InteractionType.Redirect,
+    interactionType: 'redirect' as any,
     authRequest: {
       scopes: [environment.msal.scope]
     }
@@ -69,19 +55,16 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
+    // Solo AuthInterceptor personalizado — maneja acquireTokenSilent con fallback local
+    // Se eliminó MsalInterceptor para evitar que absorba errores InteractionRequired
+    // en usuarios reales de Azure AD e impida que llegue al .error() del subscribe
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
       multi: true
     },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: MsalInterceptor,
-      multi: true
-    },
     { provide: MSAL_INSTANCE, useFactory: MSALInstanceFactory },
     { provide: MSAL_GUARD_CONFIG, useFactory: MSALGuardConfigFactory },
-    { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: MSALInterceptorConfigFactory },
     MsalService,
     MsalGuard,
     MsalBroadcastService

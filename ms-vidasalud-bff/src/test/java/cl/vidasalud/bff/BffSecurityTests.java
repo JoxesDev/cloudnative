@@ -40,4 +40,11 @@ public class BffSecurityTests {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("Petición sin token a /api/admin/queues debe retornar 401 Unauthorized")
+    void shouldReturn401WhenNoTokenProvidedForAdminQueues() throws Exception {
+        mockMvc.perform(get("/api/admin/queues"))
+                .andExpect(status().isUnauthorized());
+    }
 }

@@ -3,6 +3,7 @@ package cl.vidasalud.appointments.service;
 import cl.vidasalud.appointments.domain.Appointment;
 import cl.vidasalud.appointments.domain.AppointmentStatus;
 import cl.vidasalud.appointments.dto.CreateAppointmentRequest;
+import cl.vidasalud.appointments.producer.AppointmentEventPublisher;
 import cl.vidasalud.appointments.repository.AppointmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,12 @@ import java.util.NoSuchElementException;
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final AppointmentEventPublisher eventPublisher;
 
-    public AppointmentService(AppointmentRepository appointmentRepository) {
+    public AppointmentService(AppointmentRepository appointmentRepository,
+                              AppointmentEventPublisher eventPublisher) {
         this.appointmentRepository = appointmentRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -45,7 +49,12 @@ public class AppointmentService {
                 request.getScheduledAt(),
                 AppointmentStatus.SOLICITADA
         );
-        return appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        // Disparo asíncrono desacoplado de eventos
+        eventPublisher.publishAppointmentCreated(saved);
+
+        return saved;
     }
 
     public Appointment transitionStatus(Long id, AppointmentStatus nextStatus) {
@@ -60,7 +69,12 @@ public class AppointmentService {
         }
 
         appointment.setStatus(nextStatus);
-        return appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        // Disparo asíncrono desacoplado de eventos
+        eventPublisher.publishAppointmentStatusChanged(saved);
+
+        return saved;
     }
 
     public void delete(Long id) {

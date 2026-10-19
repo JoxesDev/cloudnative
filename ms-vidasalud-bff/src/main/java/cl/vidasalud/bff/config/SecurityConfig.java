@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/appointments/**").hasAnyRole("Admin", "Recepcionista", "Paciente")
                 .requestMatchers("/api/catalog/**").hasAnyRole("Admin", "Recepcionista")
+                .requestMatchers("/api/admin/**").hasRole("Admin")
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

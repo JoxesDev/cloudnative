@@ -1,20 +1,37 @@
 version: '3.8'
 
 services:
+  rabbitmq-svc:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-svc
+    ports:
+      - "5672:5672"     # Protocolo AMQP
+      - "15672:15672"   # Consola de Administración Web RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS:-guest}"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - vidasalud-net
+
   bff-svc:
     build:
       context: ../ms-vidasalud-bff
       dockerfile: Dockerfile
     container_name: bff-svc
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m"
+      SERVER_PORT: 8082
       AZURE_TENANT_ID: "${AZURE_TENANT_ID}"
       AZURE_API_CLIENT_ID: "${AZURE_API_CLIENT_ID}"
       APPOINTMENTS_URL: "http://appointments-svc:8081"
+      ADMIN_URL: "http://rabbitmq-admin-svc:8083"
     depends_on:
       - appointments-svc
+      - rabbitmq-admin-svc
     networks:
       - vidasalud-net
 
@@ -30,8 +47,36 @@ services:
       SPRING_DATASOURCE_URL: "${DB_URL:-jdbc:h2:mem:vidasalud_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}"
       SPRING_DATASOURCE_USERNAME: "${DB_USER:-sa}"
       SPRING_DATASOURCE_PASSWORD: "${DB_PASS:-}"
+      SPRING_RABBITMQ_HOST: "rabbitmq-svc"
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: "${RABBITMQ_USER:-guest}"
+      SPRING_RABBITMQ_PASSWORD: "${RABBITMQ_PASS:-guest}"
+    depends_on:
+      - rabbitmq-svc
     networks:
       - vidasalud-net
+
+  rabbitmq-admin-svc:
+    build:
+      context: ../ms-vidasalud-admin
+      dockerfile: Dockerfile
+    container_name: rabbitmq-admin-svc
+    ports:
+      - "8083:8083"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m"
+      SERVER_PORT: 8083
+      SPRING_RABBITMQ_HOST: "rabbitmq-svc"
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: "${RABBITMQ_USER:-guest}"
+      SPRING_RABBITMQ_PASSWORD: "${RABBITMQ_PASS:-guest}"
+    depends_on:
+      - rabbitmq-svc
+    networks:
+      - vidasalud-net
+
+volumes:
+  rabbitmq-data:
 
 networks:
   vidasalud-net:

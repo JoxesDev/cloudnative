@@ -20,6 +20,36 @@ spring:
     console:
       enabled: true
       path: /h2-console
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    virtual-host: ${SPRING_RABBITMQ_VIRTUAL_HOST:/}
+    listener:
+      simple:
+        acknowledge-mode: manual
+        auto-startup: ${RABBITMQ_AUTO_STARTUP:true}
+
+# Configuración centralizada de RabbitMQ (Criterio 1: sin valores dispersos en código)
+rabbitmq:
+  exchanges:
+    direct: vidasalud.direct.exchange
+    dlx: vidasalud.dlx.exchange
+  queues:
+    notifications: vidasalud.notifications.queue
+    notifications-dlq: vidasalud.notifications.dlq
+    tickets: vidasalud.tickets.queue
+    tickets-dlq: vidasalud.tickets.dlq
+    audit: vidasalud.audit.queue
+    audit-dlq: vidasalud.audit.dlq
+  routing-keys:
+    notifications: appointment.notification
+    notifications-dlq: appointment.notification.dlq
+    tickets: appointment.ticket
+    tickets-dlq: appointment.ticket.dlq
+    audit: appointment.audit
+    audit-dlq: appointment.audit.dlq
 
 management:
   endpoints:

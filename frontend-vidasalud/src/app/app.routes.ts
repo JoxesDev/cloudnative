@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AppointmentsComponent } from './components/appointments/appointments.component';
 import { CatalogComponent } from './components/catalog/catalog.component';
+import { RabbitmqAdminComponent } from './components/rabbitmq-admin/rabbitmq-admin.component';
 import { UnauthorizedComponent } from './components/unauthorized/unauthorized.component';
 import { LoginComponent } from './components/login/login.component';
 import { roleGuard } from './guards/role.guard';
@@ -20,6 +21,11 @@ export const routes: Routes = [
     path: 'catalog',
     component: CatalogComponent,
     canActivate: [roleGuard(['Admin', 'Recepcionista'])]
+  },
+  {
+    path: 'rabbitmq',
+    component: RabbitmqAdminComponent,
+    canActivate: [roleGuard(['Admin'])]
   },
   {
     path: 'login',

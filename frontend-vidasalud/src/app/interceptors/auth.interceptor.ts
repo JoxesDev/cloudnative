@@ -1,11 +1,12 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   HttpInterceptor,
   HttpRequest,
   HttpHandler,
   HttpEvent
 } from '@angular/common/http';
-import { Observable, from, switchMap, catchError, of } from 'rxjs';
+import { Observable, from, of } from 'rxjs';
+import { switchMap, catchError, timeout } from 'rxjs/operators';
 import { msalInstance } from '../app.config';
 import { environment } from '../../environments/environment';
 
@@ -18,9 +19,14 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
+    // En modo de rol simulado (pruebas docentes), no llamamos a Azure AD para evitar bloqueos
+    const devRole = localStorage.getItem('vidasalud_dev_role');
+    if (devRole && devRole !== 'RESET') {
+      return next.handle(req);
+    }
+
     const account = msalInstance.getActiveAccount() || msalInstance.getAllAccounts()[0];
     if (!account) {
-      console.warn('AuthInterceptor: No hay cuenta activa, enviando sin token');
       return next.handle(req);
     }
 
@@ -35,8 +41,8 @@ export class AuthInterceptor implements HttpInterceptor {
         account: account
       })
     ).pipe(
+      timeout(2500),
       switchMap(tokenResponse => {
-        console.log('AuthInterceptor: Token adquirido, adjuntando Bearer header');
         const authReq = req.clone({
           setHeaders: {
             Authorization: `Bearer ${tokenResponse.accessToken}`
@@ -45,8 +51,7 @@ export class AuthInterceptor implements HttpInterceptor {
         return next.handle(authReq);
       }),
       catchError(err => {
-        console.error('AuthInterceptor: Error adquiriendo token silencioso:', err);
-        // Intentar con popup/redirect si el token silencioso falla
+        console.warn('AuthInterceptor: Fallback sin token tras acquireTokenSilent:', err?.message || err);
         return next.handle(req);
       })
     );
