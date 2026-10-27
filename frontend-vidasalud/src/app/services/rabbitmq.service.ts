@@ -14,20 +14,24 @@ import {
   ProcessedMessageLog
 } from '../models/rabbitmq.model';
 
-const API_TIMEOUT_MS = 4000;
+const API_TIMEOUT_MS = 5000;
+const isBrowser = typeof window !== 'undefined';
+const host = isBrowser ? window.location.hostname : 'localhost';
+const protocol = isBrowser ? window.location.protocol : 'http:';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RabbitmqService {
   private http = inject(HttpClient);
+  private proxyUrl = '/api/admin';
+  private directUrl = `${protocol}//${host}:8083/api/admin`;
   private bffUrl = `${environment.msal.apiUri}/api/admin`;
-  private directUrl = 'http://localhost:8083/api/admin';
 
   private get baseUrl(): string {
     const devRole = localStorage.getItem('vidasalud_dev_role');
     if (devRole && devRole !== 'RESET') {
-      return this.directUrl;
+      return this.proxyUrl;
     }
     return this.bffUrl;
   }

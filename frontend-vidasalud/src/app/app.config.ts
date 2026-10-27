@@ -26,16 +26,36 @@ const tenantId = environment.msal.tenantId && !environment.msal.tenantId.include
   ? environment.msal.tenantId
   : 'common';
 
-export const msalInstance: IPublicClientApplication = new PublicClientApplication({
-  auth: {
-    clientId: clientId,
-    authority: `https://login.microsoftonline.com/${tenantId}`,
-    redirectUri: environment.msal.redirectUri
-  },
-  cache: {
-    cacheLocation: BrowserCacheLocation.LocalStorage
+function createMsalInstance(): IPublicClientApplication {
+  try {
+    return new PublicClientApplication({
+      auth: {
+        clientId: clientId,
+        authority: `https://login.microsoftonline.com/${tenantId}`,
+        redirectUri: environment.msal.redirectUri
+      },
+      cache: {
+        cacheLocation: BrowserCacheLocation.LocalStorage
+      }
+    });
+  } catch (e) {
+    console.warn('Fallback seguro de MSAL (modo demostración / contexto HTTP):', e);
+    return {
+      initialize: async () => {},
+      getAllAccounts: () => [],
+      getActiveAccount: () => null,
+      setActiveAccount: () => {},
+      loginRedirect: async () => {},
+      loginPopup: async () => ({} as any),
+      logoutRedirect: async () => {},
+      acquireTokenSilent: async () => ({} as any),
+      handleRedirectPromise: async () => null,
+      getLogger: () => ({ error: () => {}, warn: () => {}, info: () => {}, verbose: () => {} } as any)
+    } as unknown as IPublicClientApplication;
   }
-});
+}
+
+export const msalInstance: IPublicClientApplication = createMsalInstance();
 
 export function MSALInstanceFactory(): IPublicClientApplication {
   return msalInstance;
@@ -55,9 +75,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
-    // Solo AuthInterceptor personalizado — maneja acquireTokenSilent con fallback local
-    // Se eliminó MsalInterceptor para evitar que absorba errores InteractionRequired
-    // en usuarios reales de Azure AD e impida que llegue al .error() del subscribe
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
@@ -70,4 +87,3 @@ export const appConfig: ApplicationConfig = {
     MsalBroadcastService
   ]
 };
-

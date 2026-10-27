@@ -5,20 +5,24 @@ import { timeout, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Appointment, CreateAppointmentDto, TransitionStatusDto } from '../models/appointment.model';
 
-const API_TIMEOUT_MS = 4000;
+const API_TIMEOUT_MS = 5000;
+const isBrowser = typeof window !== 'undefined';
+const host = isBrowser ? window.location.hostname : 'localhost';
+const protocol = isBrowser ? window.location.protocol : 'http:';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppointmentService {
   private http = inject(HttpClient);
+  private proxyUrl = '/api/appointments';
+  private directUrl = `${protocol}//${host}:8081/api/appointments`;
   private bffUrl = `${environment.msal.apiUri}/api/appointments`;
-  private directUrl = 'http://localhost:8081/api/appointments';
 
   private get baseUrl(): string {
     const devRole = localStorage.getItem('vidasalud_dev_role');
     if (devRole && devRole !== 'RESET') {
-      return this.directUrl;
+      return this.proxyUrl;
     }
     return this.bffUrl;
   }

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  rabbit1:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbit1
+    hostname: rabbit1
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=CLOUDNATIVE_RABBITMQ_DUOC_2025
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - rabbit-cluster-net
+
+  rabbit2:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbit2
+    hostname: rabbit2
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=CLOUDNATIVE_RABBITMQ_DUOC_2025
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    depends_on:
+      - rabbit1
+    networks:
+      - rabbit-cluster-net
+
+networks:
+  rabbit-cluster-net:
+    driver: bridge

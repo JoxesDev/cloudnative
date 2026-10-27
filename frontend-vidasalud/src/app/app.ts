@@ -18,30 +18,35 @@ export class App implements OnInit {
   title = 'VidaSalud';
 
   ngOnInit(): void {
-    // Procesa el código o token que Microsoft Entra ID envía en el redirect
-    this.msalService.handleRedirectObservable().subscribe({
-      next: (result) => {
-        if (result && result.account) {
-          console.log('Autenticación Microsoft Entra ID completada:', result.account.username);
-          this.msalService.instance.setActiveAccount(result.account);
-          this.authService.refreshUserState();
-          this.router.navigate(['/appointments']);
-        } else {
+    try {
+      // Procesa el código o token que Microsoft Entra ID envía en el redirect
+      this.msalService.handleRedirectObservable().subscribe({
+        next: (result) => {
+          if (result && result.account) {
+            console.log('Autenticación Microsoft Entra ID completada:', result.account.username);
+            this.msalService.instance.setActiveAccount(result.account);
+            this.authService.refreshUserState();
+            this.router.navigate(['/appointments']);
+          } else {
+            const accounts = this.msalService.instance.getAllAccounts();
+            if (accounts.length > 0 && !this.msalService.instance.getActiveAccount()) {
+              this.msalService.instance.setActiveAccount(accounts[0]);
+            }
+            this.authService.refreshUserState();
+          }
+        },
+        error: (err) => {
+          console.error('Error procesando respuesta de Microsoft Entra ID:', err);
           const accounts = this.msalService.instance.getAllAccounts();
           if (accounts.length > 0 && !this.msalService.instance.getActiveAccount()) {
             this.msalService.instance.setActiveAccount(accounts[0]);
           }
           this.authService.refreshUserState();
         }
-      },
-      error: (err) => {
-        console.error('Error procesando respuesta de Microsoft Entra ID:', err);
-        const accounts = this.msalService.instance.getAllAccounts();
-        if (accounts.length > 0 && !this.msalService.instance.getActiveAccount()) {
-          this.msalService.instance.setActiveAccount(accounts[0]);
-        }
-        this.authService.refreshUserState();
-      }
-    });
+      });
+    } catch (err) {
+      console.warn('handleRedirectObservable omitido (contexto HTTP sin WebCrypto):', err);
+      this.authService.refreshUserState();
+    }
   }
 }
